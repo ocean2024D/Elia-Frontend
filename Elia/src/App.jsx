@@ -1,11 +1,12 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Navbar from "../components/Navbar";
-import Home from "../pages/Home";
-import Requests from "../pages/Requests";
-import Admin from "../pages/Admin";
-import Overview from "../pages/Overview";
-import Contacts from "../pages/Contacts";
-import About from "../pages/About";
+import Navbar from "./components/Navbar";
+import Home from "./pages/Home";
+import Requests from "./pages/Requests";
+import Admin from "./pages/Admin";
+import Overview from "./pages/Overview";
+import Contacts from "./pages/Contacts";
+import About from "./pages/About";
+import Register from "./pages/Register";
 
 const App = () => {
   return (
@@ -18,6 +19,7 @@ const App = () => {
         <Route path="/overview" element={<Overview />} />
         <Route path="/contacts" element={<Contacts />} />
         <Route path="/about" element={<About />} />
+        <Route path="/register" element={<Register />} />
       </Routes>
     </Router>
   );
