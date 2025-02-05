@@ -32,7 +32,7 @@ const Login = () => {
         // Redirect to home
         setTimeout(() => {
           navigate("/");
-        }, 2000);
+        }, 1000);
       }
     } catch (err) {
       toast.error("An error occurred. Please try again.");
