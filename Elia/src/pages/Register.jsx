@@ -1,7 +1,14 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { useCookies } from "react-cookie";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import "./Register.css";
 
 const Register = () => {
+  const navigate = useNavigate();
+  const [, setCookie] = useCookies(["authToken"]); // Use setCookie to store JWT
   const [formData, setFormData] = useState({
     name: "",
     lastName: "",
@@ -18,10 +25,28 @@ const Register = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("User Registered:", formData);
-    // logique à voir
+
+    try {
+      const { data } = await axios.post(
+        "http://localhost:8080/api/register",
+        formData
+      );
+
+      if (data.success && data.token) {
+        // Store JWT token in cookies
+        setCookie("authToken", data.token, { path: "/", httpOnly: false });
+
+        toast.success("Registration successful! Redirecting to home...");
+        setTimeout(() => navigate("/"), 2000); // Redirect to Home page
+      } else {
+        toast.error(data.message || "Registration failed");
+      }
+    } catch (error) {
+      toast.error("An error occurred. Please try again.");
+      console.error(error);
+    }
   };
 
   return (
@@ -81,6 +106,8 @@ const Register = () => {
         </div>
         <button type="submit">Register</button>
       </form>
+
+      <ToastContainer />
     </div>
   );
 };
