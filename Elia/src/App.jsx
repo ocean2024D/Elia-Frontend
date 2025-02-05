@@ -7,13 +7,25 @@ import Overview from "./pages/Overview";
 import Contacts from "./pages/Contacts";
 import About from "./pages/About";
 import Register from "./pages/Register";
-
+import ProtectedRoute from "./components/ProtectedRoute";
+import Login from "./pages/Login";
+import "./App.css";
 const App = () => {
   return (
     <Router>
       <Navbar />
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+
+        {/* Protect the home page */}
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Home />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/requests" element={<Requests />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/overview" element={<Overview />} />
