@@ -11,11 +11,24 @@ const Register = () => {
   const [, setCookie] = useCookies(["authToken"]); // Use setCookie to store JWT
   const [formData, setFormData] = useState({
     name: "",
-    lastName: "",
     email: "",
     password: "",
     isAdmin: false,
+    zone: "", // New zone field
   });
+
+  const zones = [
+    "North-West Lendelede",
+    "North-West Lochristi",
+    "North-East Merksem",
+    "North-East Stalen",
+    "North-East Schaarbeek Noord",
+    "South-West Gouy",
+    "South-West Schaerbeek Sud",
+    "South-East Bressoux",
+    "South-East Villeroux",
+    "South-East Gembloux",
+  ];
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -39,7 +52,7 @@ const Register = () => {
         setCookie("authToken", data.token, { path: "/", httpOnly: false });
 
         toast.success("Registration successful! Redirecting to home...");
-        setTimeout(() => navigate("/"), 2000); // Redirect to Home page
+        setTimeout(() => navigate("/"), 1000); // Redirect to Home page
       } else {
         toast.error(data.message || "Registration failed");
       }
@@ -54,7 +67,7 @@ const Register = () => {
       <h2>Register</h2>
       <form onSubmit={handleSubmit}>
         <div className="input-group">
-          <label>Name:</label>
+          <label>Name & Lastname:</label>
           <input
             type="text"
             name="name"
@@ -63,16 +76,7 @@ const Register = () => {
             required
           />
         </div>
-        <div className="input-group">
-          <label>Last Name:</label>
-          <input
-            type="text"
-            name="lastName"
-            value={formData.lastName}
-            onChange={handleChange}
-            required
-          />
-        </div>
+
         <div className="input-group">
           <label>Email:</label>
           <input
@@ -92,6 +96,21 @@ const Register = () => {
             onChange={handleChange}
             required
           />
+        </div>
+        <div className="input-group">
+          <label>Zone:</label>
+          <select
+            name="zone"
+            value={formData.zone}
+            onChange={handleChange}
+            required>
+            <option value="">Select a Zone</option>
+            {zones.map((zone, index) => (
+              <option key={index} value={zone}>
+                {zone}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="input-group checkbox-group">
           <label>
