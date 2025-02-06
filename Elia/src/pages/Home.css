@@ -33,7 +33,7 @@ input {
 button {
   width: 100%;
   padding: 10px;
-  background: #ff4d4d;
+  background: #f0811a;
   color: white;
   border: none;
   border-radius: 5px;
@@ -41,7 +41,7 @@ button {
 }
 
 button:hover {
-  background: #cc0000;
+  background: #7a420d;
 }
 p {
   margin: 10px 0;

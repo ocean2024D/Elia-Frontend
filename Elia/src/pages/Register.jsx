@@ -182,15 +182,15 @@ const Register = () => {
 
         {/* Admin Checkbox */}
         <div className="input-group checkbox-group">
-          <label>
+          <div className="checkboxGroup">
+            <label>Register as Admin</label>
             <input
               type="checkbox"
               name="isAdmin"
               checked={formData.isAdmin}
               onChange={handleChange}
             />
-            Register as Admin
-          </label>
+          </div>
         </div>
 
         {/* Submit Button */}
