@@ -1,9 +1,11 @@
 import { useCookies } from "react-cookie";
 import { useNavigate } from "react-router-dom";
+import FullCalendar from "@fullcalendar/react"; // Import FullCalendar
+import dayGridPlugin from "@fullcalendar/daygrid"; // Import dayGrid plugin
 import "./Home.css";
 
 const Home = () => {
-  const [, , removeCookie] = useCookies(["authToken"]); // [cookies, setCookies, removeCookies] we are never using the first 2, i deleted them to have a clean code
+  const [, , removeCookie] = useCookies(["authToken"]);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -12,10 +14,19 @@ const Home = () => {
   };
 
   return (
-    <div className="home-container">
-      <h2>Welcome to the Home Page!</h2>
-      <button onClick={handleLogout}>Logout</button>
-    </div>
+    <>
+      <div className="home-container">
+        <div className="calendar-container">
+          {/* FullCalendar component */}
+          <FullCalendar
+            plugins={[dayGridPlugin]} // Add the dayGrid plugin
+            initialView="dayGridMonth" // Initial view for the calendar (month view)
+          />
+        </div>
+
+        <button onClick={handleLogout}>Logout</button>
+      </div>
+    </>
   );
 };
 

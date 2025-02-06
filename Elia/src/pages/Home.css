@@ -1,11 +1,5 @@
 .home-container {
-  width: 300px;
-  margin: 50px auto;
-  padding: 20px;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 10px 20px 20px rgba(0, 0, 0, 0.1);
-  text-align: center;
+  background-color: rgba(255, 255, 255, 0.9);
 }
 
 h2 {
@@ -31,7 +25,7 @@ input {
 }
 
 button {
-  width: 100%;
+  width: 100px;
   padding: 10px;
   background: #f0811a;
   color: white;
@@ -46,4 +40,25 @@ button:hover {
 p {
   margin: 10px 0;
   color: blue;
+}
+.calendar-container {
+  background: rgba(0, 0, 0, 0.1);
+  margin: 50px auto;
+  width: 95%;
+  height: 70%; /* 70% of the viewport height */
+  margin-top: 20px;
+}
+
+/* Optional: Add some style to the calendar */
+.fc {
+  border-radius: 10px;
+  width: 100%;
+  max-width: 100%;
+}
+.fc-header-toolbar {
+  padding: 0 10px; /* Adjust space around the toolbar */
+}
+
+.fc-daygrid-day {
+  padding: 4px; /* Adjust day padding if needed */
 }
