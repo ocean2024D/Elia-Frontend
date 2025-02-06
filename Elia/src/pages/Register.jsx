@@ -3,20 +3,24 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useCookies } from "react-cookie";
 import { ToastContainer, toast } from "react-toastify";
+import Joi from "joi";
 import "react-toastify/dist/ReactToastify.css";
 import "./Register.css";
 
 const Register = () => {
   const navigate = useNavigate();
-  const [, setCookie] = useCookies(["authToken"]); // Use setCookie to store JWT
+  const [, setCookie] = useCookies(["authToken"]);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
     isAdmin: false,
-    zone: "", // New zone field
+    zone: "",
   });
 
+  const [errors, setErrors] = useState({});
+
+  // List of Zones
   const zones = [
     "North-West Lendelede",
     "North-West Lochristi",
@@ -30,6 +34,41 @@ const Register = () => {
     "South-East Gembloux",
   ];
 
+  // Joi Validation Schema
+  const schema = Joi.object({
+    name: Joi.string().trim().min(3).max(100).required().messages({
+      "string.empty": "Name can not be an empty field",
+      "string.min": "Name must be at least 3 characters long",
+      "string.max": "Name must be 100 characters at most",
+      "any.required": "Name is mandatory",
+    }),
+    email: Joi.string()
+      .email({ tlds: { allow: false } })
+      .trim()
+      .required()
+      .messages({
+        "string.empty": "Email can not be an empty field",
+        "string.email": "Email must be valid",
+        "any.required": "Email is mandatory",
+      }),
+    password: Joi.string().trim().min(6).max(36).required().messages({
+      "string.empty": "Password can not be an empty field",
+      "string.min": "Password should be at least 6 characters",
+      "string.max": "Password must be 36 characters at most",
+      "any.required": "Password is mandatory",
+    }),
+    isAdmin: Joi.boolean(),
+    zone: Joi.string()
+      .valid(...zones)
+      .required()
+      .messages({
+        "string.empty": "Zone field is mandatory",
+        "any.only": "Please, select a valid zone",
+        "any.required": "Zone field is mandatory",
+      }),
+  });
+
+  // Handle Input Changes
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData({
@@ -38,27 +77,40 @@ const Register = () => {
     });
   };
 
+  // Validate Form on Submit
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Validate with Joi
+    const { error } = schema.validate(formData, { abortEarly: false });
+
+    if (error) {
+      // Convert Joi errors into a readable format
+      const newErrors = {};
+      error.details.forEach((err) => {
+        newErrors[err.path[0]] = err.message;
+      });
+      setErrors(newErrors);
+      return;
+    }
+
+    setErrors({}); // Clear errors if validation passes
+
     try {
-      const { data } = await axios.post(
+      const response = await axios.post(
         "http://localhost:8080/api/register",
         formData
       );
 
-      if (data.success && data.token) {
-        // Store JWT token in cookies
-        setCookie("authToken", data.token, { path: "/", httpOnly: false });
-
-        toast.success("Registration successful! Redirecting to home...");
-        setTimeout(() => navigate("/"), 1000); // Redirect to Home page
+      if (response.data.success) {
+        setCookie("authToken", response.data.token, { path: "/" });
+        toast.success("Registration successful! Redirecting...");
+        setTimeout(() => navigate("/"), 1000);
       } else {
-        toast.error(data.message || "Registration failed");
+        toast.error(response.data.message || "Registration failed");
       }
     } catch (error) {
-      toast.error("An error occurred. Please try again.");
-      console.error(error);
+      toast.error(error.response?.data?.message || "An error has occurred.");
     }
   };
 
@@ -66,17 +118,21 @@ const Register = () => {
     <div className="register-container">
       <h2>Register</h2>
       <form onSubmit={handleSubmit}>
+        {/* Name */}
         <div className="input-group">
-          <label>Name & Lastname:</label>
+          <label>Name:</label>
           <input
             type="text"
             name="name"
             value={formData.name}
             onChange={handleChange}
-            required
           />
+          {errors.name && (
+            <p className="error">{errors.name}</p> // Error message below field
+          )}
         </div>
 
+        {/* Email */}
         <div className="input-group">
           <label>Email:</label>
           <input
@@ -84,9 +140,13 @@ const Register = () => {
             name="email"
             value={formData.email}
             onChange={handleChange}
-            required
           />
+          {errors.email && (
+            <p className="error">{errors.email}</p> // Error message below field
+          )}
         </div>
+
+        {/* Password */}
         <div className="input-group">
           <label>Password:</label>
           <input
@@ -94,9 +154,13 @@ const Register = () => {
             name="password"
             value={formData.password}
             onChange={handleChange}
-            required
           />
+          {errors.password && (
+            <p className="error">{errors.password}</p> // Error message below field
+          )}
         </div>
+
+        {/* Zone */}
         <div className="input-group">
           <label>Zone:</label>
           <select
@@ -104,14 +168,19 @@ const Register = () => {
             value={formData.zone}
             onChange={handleChange}
             required>
-            <option value="">Select a Zone</option>
+            <option value="">Select a zone</option>
             {zones.map((zone, index) => (
               <option key={index} value={zone}>
                 {zone}
               </option>
             ))}
           </select>
+          {errors.zone && (
+            <p className="error">{errors.zone}</p> // Error message below field
+          )}
         </div>
+
+        {/* Admin Checkbox */}
         <div className="input-group checkbox-group">
           <label>
             <input
@@ -123,9 +192,10 @@ const Register = () => {
             Register as Admin
           </label>
         </div>
+
+        {/* Submit Button */}
         <button type="submit">Register</button>
       </form>
-
       <ToastContainer />
     </div>
   );
