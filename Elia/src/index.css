@@ -9,3 +9,10 @@
 body {
   font-family: "Quicksand", sans-serif;
 }
+.main-content {
+  margin-top: 60px; /* Adjust according to navbar height */
+  background: url("./assets/elia-1.svg") no-repeat top left;
+  background-size: 60% auto; /* 40% width and automatic height adjustment */
+  padding-top: 20px; /* Adjust padding as needed */
+  padding-bottom: 20px; /* Optionally add padding at the bottom */
+}

@@ -14,25 +14,27 @@ const App = () => {
   return (
     <Router>
       <Navbar />
-      <Routes>
-        <Route path="/login" element={<Login />} />
+      <div className="main-content">
+        <Routes>
+          <Route path="/login" element={<Login />} />
 
-        {/* Protect the home page */}
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <Home />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="/requests" element={<Requests />} />
-        <Route path="/admin" element={<Admin />} />
-        <Route path="/overview" element={<Overview />} />
-        <Route path="/contacts" element={<Contacts />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/register" element={<Register />} />
-      </Routes>
+          {/* Protect the home page */}
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Home />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/requests" element={<Requests />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/overview" element={<Overview />} />
+          <Route path="/contacts" element={<Contacts />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/register" element={<Register />} />
+        </Routes>
+      </div>
     </Router>
   );
 };

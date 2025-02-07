@@ -2,7 +2,7 @@
   width: 300px;
   margin: 50px auto;
   padding: 20px;
-  background: white;
+  background: rgba(255, 255, 255, 0.9);
   border-radius: 8px;
   box-shadow: 10px 20px 20px rgba(0, 0, 0, 0.1);
   text-align: center;
@@ -15,12 +15,16 @@ h2 {
 .input-group {
   margin-bottom: 15px;
   text-align: left;
+  background-color: #f0811a;
+  border-radius: 5px;
 }
 
 label {
   display: block;
   margin-bottom: 5px;
+  padding-left: 5px;
   font-weight: bold;
+  color: white;
 }
 
 input {
@@ -28,12 +32,13 @@ input {
   padding: 8px;
   border: 1px solid #ccc;
   border-radius: 5px;
+  background-color: #f0811a;
 }
 
 button {
   width: 100%;
   padding: 10px;
-  background: #ff4d4d;
+  background: #f0811a;
   color: white;
   border: none;
   border-radius: 5px;
@@ -41,7 +46,7 @@ button {
 }
 
 button:hover {
-  background: #cc0000;
+  background: #7a420d;
 }
 p {
   margin: 10px 0;
