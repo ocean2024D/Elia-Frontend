@@ -1,15 +1,21 @@
 .container {
   width: 100%;
   background-color: #f0811a;
+  height: 100px;
 }
 
 li {
   margin: 10px 10px;
   list-style-type: none;
+  font-weight: bolder;
 }
+
 a {
   text-decoration: none;
   color: #000;
+}
+a:hover {
+  color: #f0811a;
 }
 #offScreen {
   display: flex;
@@ -23,10 +29,12 @@ a {
   transition: 0.7s ease;
   font-size: 26px;
   opacity: 0.7;
+  z-index: 9999;
 }
 #offScreen.active {
   right: 0;
   transition: 0.7s;
+  z-index: 9999;
 }
 nav {
   display: flex;
@@ -36,10 +44,14 @@ nav {
 .hamburger {
   height: 50px;
   width: 50px;
-  position: relative;
-  margin-left: auto;
+  position: fixed; /* Changed from relative to fixed */
+  top: 20px;
+  right: 20px;
   display: flex;
   justify-content: center;
+  align-items: center;
+  z-index: 10000; /* Higher than #offScreen */
+  cursor: pointer;
 }
 span {
   height: 7px;

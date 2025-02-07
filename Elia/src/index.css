@@ -10,9 +10,22 @@ body {
   font-family: "Quicksand", sans-serif;
 }
 .main-content {
-  margin-top: 60px; /* Adjust according to navbar height */
+  margin-top: 60px;
   background: url("./assets/elia-1.svg") no-repeat top left;
-  background-size: 60% auto; /* 40% width and automatic height adjustment */
-  padding-top: 20px; /* Adjust padding as needed */
-  padding-bottom: 20px; /* Optionally add padding at the bottom */
+  background-size: 60% auto;
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+body::-webkit-scrollbar {
+  width: 10px;
+}
+
+body::-webkit-scrollbar-track {
+  background: #fff;
+}
+
+body::-webkit-scrollbar-thumb {
+  background-color: #f0811a;
+  border-radius: 20px;
+  border: 2px solid #fff;
 }

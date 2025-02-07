@@ -41,24 +41,45 @@ p {
   margin: 10px 0;
   color: blue;
 }
-.calendar-container {
-  background: rgba(0, 0, 0, 0.1);
-  margin: 50px auto;
-  width: 95%;
-  height: 70%; /* 70% of the viewport height */
-  margin-top: 20px;
+
+/* Calendar styling */
+.fc .fc-scroller::-webkit-scrollbar {
+  width: 10px;
 }
 
-/* Optional: Add some style to the calendar */
-.fc {
-  border-radius: 10px;
-  width: 100%;
-  max-width: 100%;
-}
-.fc-header-toolbar {
-  padding: 0 10px; /* Adjust space around the toolbar */
+.fc .fc-scroller::-webkit-scrollbar-track {
+  background: #fff;
 }
 
-.fc-daygrid-day {
-  padding: 4px; /* Adjust day padding if needed */
+.fc .fc-scroller::-webkit-scrollbar-thumb {
+  background-color: #f0811a;
+  border-radius: 20px;
+  border: 2px solid #fff;
+}
+.fc .fc-toolbar-chunk button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 32px;
+  padding: 5px;
+  border-radius: 5px;
+  background-color: #f0811a;
+  color: white;
+  border: none;
+  cursor: pointer;
+  position: relative;
+}
+.fc .fc-toolbar-chunk button .fc-icon {
+  font-size: 26px;
+  position: absolute;
+  top: -10px;
+}
+.fc .fc-toolbar-chunk button:hover {
+  background-color: #7a420d;
+}
+.fc .fc-week-number {
+  font-weight: bold;
+  color: #f0811a;
+  padding: 5px;
 }
