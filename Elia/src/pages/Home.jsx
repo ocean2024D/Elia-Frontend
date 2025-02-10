@@ -1,27 +1,40 @@
+import { useState, useEffect } from "react";
 import { useCookies } from "react-cookie";
 import { useNavigate } from "react-router-dom";
-import FullCalendar from "@fullcalendar/react"; // Import FullCalendar
-import dayGridPlugin from "@fullcalendar/daygrid"; // Import dayGrid plugin
+import FullCalendar from "@fullcalendar/react";
+import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import "./Home.css";
+import { abbreviateZone } from ".././components/utils"; // Import abbreviation function
 
 const Home = () => {
   const [, , removeCookie] = useCookies(["authToken"]);
   const navigate = useNavigate();
+  const [user, setUser] = useState({ name: "", zone: "" });
+
+  // Fetch user info on page load
+  useEffect(() => {
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    if (storedUser) {
+      setUser(storedUser);
+    }
+  }, []);
 
   const handleLogout = () => {
-    removeCookie("authToken"); // Remove authentication cookie
-    navigate("/login"); // Redirect to login page
+    removeCookie("authToken");
+    navigate("/login");
   };
 
   return (
     <>
       <div className="home-container">
+        {/* User Info */}
+        <div className="top-left">{abbreviateZone(user.zone)}</div>
+        <div className="top-center">{user.name}</div>
+
         <div className="calendar-container">
-          {/* FullCalendar component */}
           <FullCalendar
-            className="calendar"
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
             initialView="dayGridMonth"
             headerToolbar={{

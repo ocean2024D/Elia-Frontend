@@ -19,6 +19,7 @@ const Login = () => {
         values,
         { withCredentials: true }
       );
+      console.log("login response: ", data); //view debug where name is undefined
 
       if (data.errors) {
         if (data.errors.email) toast.error(data.errors.email);
@@ -28,6 +29,13 @@ const Login = () => {
 
         // Store authentication in a cookie
         setCookie("authToken", data.token, { path: "/" });
+
+        // Store user details in localStorage
+        if (data.user) {
+          localStorage.setItem("user", JSON.stringify(data.user));
+        } else {
+          console.error("User data missing from response");
+        }
 
         // Redirect to home
         setTimeout(() => {
