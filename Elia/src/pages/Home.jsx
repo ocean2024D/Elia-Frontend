@@ -2,6 +2,8 @@ import { useCookies } from "react-cookie";
 import { useNavigate } from "react-router-dom";
 import FullCalendar from "@fullcalendar/react"; // Import FullCalendar
 import dayGridPlugin from "@fullcalendar/daygrid"; // Import dayGrid plugin
+import timeGridPlugin from "@fullcalendar/timegrid";
+import interactionPlugin from "@fullcalendar/interaction";
 import "./Home.css";
 
 const Home = () => {
@@ -19,8 +21,17 @@ const Home = () => {
         <div className="calendar-container">
           {/* FullCalendar component */}
           <FullCalendar
-            plugins={[dayGridPlugin]} // Add the dayGrid plugin
-            initialView="dayGridMonth" // Initial view for the calendar (month view)
+            className="calendar"
+            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+            initialView="dayGridMonth"
+            headerToolbar={{
+              start: "today,prev,next",
+              center: "title",
+              end: "dayGridMonth,timeGridWeek,timeGridDay",
+            }}
+            height={"70vh"}
+            weekNumbers={true}
+            firstDay={4}
           />
         </div>
 

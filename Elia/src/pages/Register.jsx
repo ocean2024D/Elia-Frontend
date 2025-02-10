@@ -49,34 +49,34 @@ const Register = () => {
   // Joi Validation Schema
   const schema = Joi.object({
     name: Joi.string().trim().min(3).max(100).required().messages({
-      "string.empty": "Name can not be an empty field",
-      "string.min": "Name must be at least 3 characters long",
-      "string.max": "Name must be 100 characters at most",
-      "any.required": "Name is mandatory",
+      "string.empty": "Name can not be an empty field!",
+      "string.min": "Name must be at least 3 characters long!",
+      "string.max": "Name must be 100 characters at most!",
+      "any.required": "Name is mandatory!",
     }),
     email: Joi.string()
       .email({ tlds: { allow: false } })
       .trim()
       .required()
       .messages({
-        "string.empty": "Email can not be an empty field",
-        "string.email": "Email must be valid",
-        "any.required": "Email is mandatory",
+        "string.empty": "Email can not be an empty field!",
+        "string.email": "Email must be valid!",
+        "any.required": "Email is mandatory!",
       }),
     password: Joi.string().trim().min(6).max(36).required().messages({
-      "string.empty": "Password can not be an empty field",
-      "string.min": "Password should be at least 6 characters",
-      "string.max": "Password must be 36 characters at most",
-      "any.required": "Password is mandatory",
+      "string.empty": "Password can not be an empty field!",
+      "string.min": "Password should be at least 6 characters!",
+      "string.max": "Password must be 36 characters at most!",
+      "any.required": "Password is mandatory!",
     }),
     isAdmin: Joi.boolean(),
     zone: Joi.string()
       .valid(...zones)
       .required()
       .messages({
-        "string.empty": "Zone field is mandatory",
-        "any.only": "Please, select a valid zone",
-        "any.required": "Zone field is mandatory",
+        "string.empty": "Zone field is mandatory!",
+        "any.only": "Please, select a valid zone!",
+        "any.required": "Zone field is mandatory!",
       }),
   });
 
