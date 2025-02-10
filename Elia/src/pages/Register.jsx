@@ -17,18 +17,6 @@ const Register = () => {
     isAdmin: false,
     zone: "",
   });
-  const zones = [
-    "North-West Lendelede",
-    "North-West Lochristi",
-    "North-East Merksem",
-    "North-East Stalen",
-    "North-East Schaarbeek Noord",
-    "South-West Gouy",
-    "South-West Schaerbeek Sud",
-    "South-East Bressoux",
-    "South-East Villeroux",
-    "South-East Gembloux",
-  ];
 
   const [errors, setErrors] = useState({});
 
@@ -114,12 +102,10 @@ const Register = () => {
         formData
       );
 
-
       if (response.data.success) {
         setCookie("authToken", response.data.token, { path: "/" });
         toast.success("Registration successful! Redirecting...");
         setTimeout(() => navigate("/"), 1000);
-
       } else {
         toast.error(response.data.message || "Registration failed");
       }
@@ -140,7 +126,6 @@ const Register = () => {
             name="name"
             value={formData.name}
             onChange={handleChange}
-
           />
           {errors.name && (
             <p className="error">{errors.name}</p> // Error message below field
@@ -161,7 +146,6 @@ const Register = () => {
             <p className="error">{errors.email}</p> // Error message below field
           )}
         </div>
-
 
         {/* Password */}
 
@@ -197,7 +181,6 @@ const Register = () => {
             <p className="error">{errors.zone}</p> // Error message below field
           )}
         </div>
-
 
         {/* Admin Checkbox */}
 
