@@ -44,14 +44,13 @@ nav {
 .hamburger {
   height: 50px;
   width: 50px;
-  position: fixed; /* Changed from relative to fixed */
-  top: 20px;
+  position: fixed;
+  top: 5px;
   right: 20px;
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 10000; /* Higher than #offScreen */
-  cursor: pointer;
+  z-index: 10000;
 }
 span {
   height: 7px;

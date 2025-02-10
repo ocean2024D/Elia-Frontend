@@ -83,3 +83,57 @@ p {
   color: #f0811a;
   padding: 5px;
 }
+.top-left {
+  padding: 10px 20px;
+  background-color: #f0811a;
+  position: fixed;
+  top: 70px;
+  left: 20px;
+  border-radius: 5px;
+  opacity: 0.9;
+  font-size: 2em;
+}
+
+.top-center {
+  font-size: 2em;
+  padding: 10px 20px;
+  background-color: #f0811a;
+  position: fixed;
+  top: 70px;
+  left: 48%;
+  border-radius: 5px;
+  opacity: 0.9;
+}
+
+/* Media Query for Small Devices */
+@media (max-width: 768px) {
+  h3 {
+    font-size: 0.5em;
+  }
+  .fc-header-toolbar .fc-toolbar-chunk button {
+    width: 35px;
+    height: 30px;
+    font-size: 14px;
+  }
+  .fc .fc-toolbar-chunk button .fc-icon {
+    font-size: 16px;
+  }
+  .fc-header-toolbar .fc-toolbar-chunk.fc-toolbar-center {
+    display: none;
+  }
+
+  .fc {
+    width: 100%;
+  }
+  .fc-toolbar-chunk button {
+    padding: 6px;
+  }
+
+  .fc-toolbar-title {
+    font-size: 0.8em;
+  }
+  .fc .fc-toolbar-chunk button .fc-icon {
+    font-size: 26px;
+    position: absolute;
+  }
+}

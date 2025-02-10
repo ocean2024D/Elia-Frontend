@@ -30,8 +30,12 @@ const Home = () => {
     <>
       <div className="home-container">
         {/* User Info */}
-        <div className="top-left">{abbreviateZone(user.zone)}</div>
-        <div className="top-center">{user.name}</div>
+        <div className="top-left">
+          <h3>{abbreviateZone(user.zone)}</h3>
+        </div>
+        <div className="top-center">
+          <h3>{user.name}</h3>
+        </div>
 
         <div className="calendar-container">
           <FullCalendar
