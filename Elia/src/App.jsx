@@ -8,6 +8,7 @@ import Contacts from "./pages/Contacts";
 import About from "./pages/About";
 import Register from "./pages/Register";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import Login from "./pages/Login";
 import "./App.css";
 const App = () => {
@@ -27,8 +28,15 @@ const App = () => {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/admin"
+            element={
+              <AdminProtectedRoute>
+                <Admin />
+              </AdminProtectedRoute>
+            }
+          />
           <Route path="/requests" element={<Requests />} />
-          <Route path="/admin" element={<Admin />} />
           <Route path="/overview" element={<Overview />} />
           <Route path="/contacts" element={<Contacts />} />
           <Route path="/about" element={<About />} />
