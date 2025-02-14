@@ -7,7 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 import "./Login.css";
 
 const Login = () => {
-  const [, setCookie] = useCookies(["authToken"]); // Use cookies to store auth token [cookies, setCookies] cookies never read so i deleted for clean code
+  const [, setCookie] = useCookies(["authToken"]);
   const navigate = useNavigate();
   const [values, setValues] = useState({ email: "", password: "" });
 
@@ -15,19 +15,31 @@ const Login = () => {
     e.preventDefault();
     try {
       const { data } = await axios.post(
-        "http://localhost:8080/api/login",
+        "http://localhost:8080/api/auth/login", // Fix: add "auth"
         values,
         { withCredentials: true }
       );
 
+      // Debug: Log the full response data
+      console.log("Login response: ", data);
+
       if (data.errors) {
+        // Handle error messages
         if (data.errors.email) toast.error(data.errors.email);
         if (data.errors.password) toast.error(data.errors.password);
       } else {
+        // Successful login
         toast.success("Login Successful!");
 
-        // Store authentication in a cookie
+        // Store authentication token in a cookie
         setCookie("authToken", data.token, { path: "/" });
+
+        // Store user details in localStorage
+        if (data.user) {
+          localStorage.setItem("user", JSON.stringify(data.user));
+        } else {
+          console.error("User data missing from response");
+        }
 
         // Redirect to home
         setTimeout(() => {
