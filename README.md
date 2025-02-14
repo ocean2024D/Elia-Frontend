@@ -9,9 +9,7 @@ Ce projet est une application frontend développée avec React et React Router. 
 - CSS (App.css)
 
 
-```sh
-npm start
-```
+
 L'application sera accessible à l'adresse `http://localhost:3000/`.
 
 ## Structure des fichiers
