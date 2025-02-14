@@ -10,88 +10,110 @@ import "./Home.css";
 import { abbreviateZone } from "../components/utils";
 
 const Home = () => {
-  const [cookies, setCookie, removeCookie] = useCookies(["authToken"]);
+  const [cookies, , removeCookie] = useCookies(["authToken"]);
   const navigate = useNavigate();
   const [user, setUser] = useState({ name: "", zone: "", _id: "" });
   const [events, setEvents] = useState([]);
+  const [zoneUsers, setZoneUsers] = useState([]); // State to hold users in the same zone
 
-  // Fetch user info from localStorage and fetch users from the same zone
+  // Fetch user info from localStorage and then fetch duties
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
-      setUser(JSON.parse(storedUser)); // Only set if user data exists
-      fetchUsersInSameZone(JSON.parse(storedUser).zone); // Fetch users in the same zone
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+      fetchZoneUsers(parsedUser.zone); // Fetch users in the same zone
+      fetchDutiesByZone(parsedUser.zone); // Fetch duties for the logged-in user's zone
     } else {
       console.error("User data not found in localStorage");
-      navigate("/login"); // Redirect to login if no user data
+      navigate("/login");
     }
   }, []);
 
-  // Fetch users from the same zone
-  const fetchUsersInSameZone = async (zone) => {
+  // Fetch users in the same zone as the logged-in user
+  const fetchZoneUsers = async (zone) => {
     try {
       const response = await axios.get(
         `http://localhost:8080/api/auth/user/zone/${encodeURIComponent(zone)}`,
         {
-          headers: {
-            Authorization: `Bearer ${cookies.authToken}`, // Access token from cookies
-          },
+          headers: { Authorization: `Bearer ${cookies.authToken}` },
         }
       );
 
-      console.log("Users in same zone:", response.data);
-      generateShiftEvents(response.data); // Generate shifts after fetching the data
+      console.log("Fetched users in the same zone:", response.data);
+      setZoneUsers(response.data); // Store the users in the zoneUsers state
     } catch (error) {
       console.error("Error fetching users in the same zone:", error);
     }
   };
 
-  // Generate shifts for the whole year, rotating users every week
-  const generateShiftEvents = (usersInZone) => {
-    const shifts = [];
-    const year = new Date().getFullYear(); //auto pick current year
-    let firstThursday = new Date(year, 0, 1); // Start on Jan 1
+  // Fetch duties from the same zone
+  const fetchDutiesByZone = async (zone) => {
+    try {
+      const response = await axios.get(
+        `http://localhost:8080/api/duties/zone/${encodeURIComponent(zone)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${cookies.authToken}`,
+          },
+        }
+      );
 
-    // Move forward until we hit Thursday
-    while (firstThursday.getDay() !== 5) {
-      firstThursday.setDate(firstThursday.getDate() + 1); // Move to first Thursday of the year
+      console.log("Fetched duties in same zone:", response.data);
+      formatEvents(response.data);
+    } catch (error) {
+      console.error("Error fetching duties by zone:", error);
     }
+  };
 
-    // Define colors for different users
-    const userColors = ["blue", "green", "green", "green", "green", "green"];
+  // Format duties into events for FullCalendar
+  const formatEvents = async (duties) => {
+    try {
+      const users = zoneUsers.reduce((acc, user) => {
+        acc[user._id] = user.name; // Map userId -> name from users in the same zone
+        return acc;
+      }, {});
 
-    // Generate shifts for 52 weeks (full year)
-    for (let week = 0; week < 52; week++) {
-      const assignedUser = usersInZone[week % usersInZone.length]; // Rotate users each week
-      const userColor = userColors[week % userColors.length]; // Assign different colors
+      const dutyEvents = duties.flatMap((duty) => {
+        return duty.days.map((day) => {
+          const assignedUserId = duty.assignedUser; // Assigned user ID from the duty
+          const assignedUserName = users[assignedUserId] || "Unknown"; // Get the name from the users list
 
-      const weekStart = new Date(firstThursday);
-      weekStart.setDate(firstThursday.getDate() + week * 7); // Start on Thursday
+          // Check if a replacement is present
+          const actualUserId = day.replacementUserId || assignedUserId;
+          const actualUserName = users[actualUserId] || "Unknown";
 
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekStart.getDate() + 7); // End on Wednesday
+          // Determine the background color
+          let backgroundColor = "blue"; // Default color
+          if (actualUserId === user._id) {
+            backgroundColor = "green"; // Logged-in user's duty
+          } else if (actualUserId !== assignedUserId) {
+            backgroundColor = "red"; // Replacement duty
+          }
 
-      shifts.push({
-        title: `On Duty: ${assignedUser.name}`,
-        start: weekStart.toISOString().split("T")[0],
-        end: weekEnd.toISOString().split("T")[0], // Multi-day event
-        allDay: true,
-        backgroundColor: assignedUser._id === user._id ? "green" : userColor, // Green for logged-in user
-        textColor: "white",
-        extendedProps: {
-          fontWeight: "bold", // Ensure text is bold
-          color: "white",
-        },
+          return {
+            title:
+              actualUserId === assignedUserId
+                ? `On Duty: ${assignedUserName}`
+                : `Replacement: ${actualUserName}`, // Show replacement if applicable
+            start: new Date(day.date).toISOString().split("T")[0], // Single day event
+            allDay: true,
+            backgroundColor,
+            textColor: "white",
+          };
+        });
       });
-    }
 
-    setEvents(shifts); // Set the generated shifts in the state
+      setEvents(dutyEvents);
+    } catch (error) {
+      console.error("Error formatting events:", error);
+    }
   };
 
   const handleLogout = () => {
-    removeCookie("authToken"); // Correctly remove the auth token
-    localStorage.removeItem("user"); // Remove the user from localStorage
-    navigate("/login"); // Redirect to login page
+    removeCookie("authToken");
+    localStorage.removeItem("user");
+    navigate("/login");
   };
 
   return (
