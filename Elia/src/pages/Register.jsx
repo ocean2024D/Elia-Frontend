@@ -32,6 +32,7 @@ const Register = () => {
     "South-East Bressoux",
     "South-East Villeroux",
     "South-East Gembloux",
+    "Admin",
   ];
 
   // Joi Validation Schema
@@ -98,7 +99,7 @@ const Register = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:8080/api/register",
+        "http://localhost:8080/api/auth/register",
         formData
       );
 

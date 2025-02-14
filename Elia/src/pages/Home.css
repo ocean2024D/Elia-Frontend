@@ -104,7 +104,18 @@ p {
   border-radius: 5px;
   opacity: 0.9;
 }
+.fc-event {
+  height: 40px !important; /* Adjust thickness */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold !important;
+  color: white !important;
+}
 
+.fc-daygrid-event {
+  border: none !important;
+}
 /* Media Query for Small Devices */
 @media (max-width: 768px) {
   h3 {
