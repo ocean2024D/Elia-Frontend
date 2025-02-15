@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useCookies } from "react-cookie";
 import { useNavigate } from "react-router-dom";
-import axios from "axios"; // Import axios here
+import axios from "axios";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -12,102 +12,113 @@ import { abbreviateZone } from "../components/utils";
 const Home = () => {
   const [cookies, , removeCookie] = useCookies(["authToken"]);
   const navigate = useNavigate();
-  const [user, setUser] = useState({ name: "", zone: "", _id: "" });
+  const [user, setUser] = useState(null);
   const [events, setEvents] = useState([]);
-  const [zoneUsers, setZoneUsers] = useState([]); // State to hold users in the same zone
+  const [zoneUsers, setZoneUsers] = useState([]);
+  const [duties, setDuties] = useState([]);
 
-  // Fetch user info from localStorage and then fetch duties
+  // Fetch user info from localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
+
     if (storedUser) {
-      const parsedUser = JSON.parse(storedUser);
-      setUser(parsedUser);
-      fetchZoneUsers(parsedUser.zone); // Fetch users in the same zone
-      fetchDutiesByZone(parsedUser.zone); // Fetch duties for the logged-in user's zone
+      setUser(JSON.parse(storedUser));
     } else {
-      console.error("User data not found in localStorage");
       navigate("/login");
     }
-  }, []);
+  }, [navigate]);
 
-  // Fetch users in the same zone as the logged-in user
+  // Fetch users in the same zone when user is available
+  useEffect(() => {
+    if (user?.zone) {
+      fetchZoneUsers(user.zone);
+    }
+  }, [user]);
+
+  // Fetch duties after zoneUsers are set
+  useEffect(() => {
+    if (user?.zone && zoneUsers.length > 0) {
+      fetchDutiesByZone(user.zone);
+    }
+  }, [zoneUsers]);
+
+  // Format duties into calendar events
+  useEffect(() => {
+    if (duties.length > 0 && zoneUsers.length > 0) {
+      formatEvents();
+    }
+  }, [duties, zoneUsers]);
+
   const fetchZoneUsers = async (zone) => {
     try {
       const response = await axios.get(
         `http://localhost:8080/api/auth/user/zone/${encodeURIComponent(zone)}`,
-        {
-          headers: { Authorization: `Bearer ${cookies.authToken}` },
-        }
+        { headers: { Authorization: `Bearer ${cookies.authToken}` } }
       );
-
-      console.log("Fetched users in the same zone:", response.data);
-      setZoneUsers(response.data); // Store the users in the zoneUsers state
+      setZoneUsers(response.data);
     } catch (error) {
-      console.error("Error fetching users in the same zone:", error);
+      console.error("Error fetching users:", error);
     }
   };
 
-  // Fetch duties from the same zone
   const fetchDutiesByZone = async (zone) => {
     try {
       const response = await axios.get(
         `http://localhost:8080/api/duties/zone/${encodeURIComponent(zone)}`,
-        {
-          headers: {
-            Authorization: `Bearer ${cookies.authToken}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${cookies.authToken}` } }
       );
-
-      console.log("Fetched duties in same zone:", response.data);
-      formatEvents(response.data);
+      setDuties(response.data);
     } catch (error) {
-      console.error("Error fetching duties by zone:", error);
+      console.error("Error fetching duties:", error);
     }
   };
 
-  // Format duties into events for FullCalendar
-  const formatEvents = async (duties) => {
-    try {
-      const users = zoneUsers.reduce((acc, user) => {
-        acc[user._id] = user.name; // Map userId -> name from users in the same zone
-        return acc;
-      }, {});
+  const formatEvents = () => {
+    // Create a map for easy access to user names by their IDs
+    const usersMap = zoneUsers.reduce((acc, user) => {
+      acc[user._id] = user.name; // Map each user id to their name
+      return acc;
+    }, {});
 
-      const dutyEvents = duties.flatMap((duty) => {
-        return duty.days.map((day) => {
-          const assignedUserId = duty.assignedUser; // Assigned user ID from the duty
-          const assignedUserName = users[assignedUserId] || "Unknown"; // Get the name from the users list
+    const dutyEvents = duties.flatMap((duty) =>
+      duty.days.map((day) => {
+        // Check who is assigned to the duty (fall back to duty.assignedUser if day.assignedUser is missing)
+        const assignedUserId = day.assignedUser || duty.assignedUser;
+        const assignedUserName = usersMap[assignedUserId] || "Unknown";
 
-          // Check if a replacement is present
-          const actualUserId = day.replacementUserId || assignedUserId;
-          const actualUserName = users[actualUserId] || "Unknown";
+        // Handle the replacement user if available (fall back to assignedUserId if replacementUserId is missing)
+        const actualUserId = day.replacementUserId || assignedUserId;
+        const actualUserName = usersMap[actualUserId] || "Unknown";
+        console.log(actualUserName);
+        // Default background color is blue (for normal shifts)
+        let backgroundColor = "blue";
 
-          // Determine the background color
-          let backgroundColor = "blue"; // Default color
-          if (actualUserId === user._id) {
-            backgroundColor = "green"; // Logged-in user's duty
-          } else if (actualUserId !== assignedUserId) {
-            backgroundColor = "red"; // Replacement duty
-          }
+        // If the actual user is the logged-in user, highlight with green
+        if (user && actualUserId === user.id) {
+          backgroundColor = "green";
+        } else if (day.status === "holiday") {
+          backgroundColor = "black";
+        }
 
-          return {
-            title:
-              actualUserId === assignedUserId
-                ? `On Duty: ${assignedUserName}`
-                : `Replacement: ${actualUserName}`, // Show replacement if applicable
-            start: new Date(day.date).toISOString().split("T")[0], // Single day event
-            allDay: true,
-            backgroundColor,
-            textColor: "white",
-          };
-        });
-      });
+        // If the status is not "guard", it's a shift change (like sick, on leave, etc.)
+        else if (day.status !== "guard") {
+          backgroundColor = "red"; // Shift change
+        }
+        return {
+          title:
+            actualUserId === assignedUserId
+              ? `On Duty: ${assignedUserName}` // Title if no replacement
+              : `Replacement: ${actualUserName}`, // Title if replacement
+          start: new Date(day.date).toISOString().split("T")[0], // Format the date to display on the calendar
+          allDay: true,
+          backgroundColor,
+          textColor: "white",
+        };
+      })
+    );
 
-      setEvents(dutyEvents);
-    } catch (error) {
-      console.error("Error formatting events:", error);
-    }
+    // Set the events in the state to be displayed in the calendar
+    setEvents(dutyEvents);
   };
 
   const handleLogout = () => {
@@ -118,45 +129,47 @@ const Home = () => {
 
   return (
     <div className="home-container">
-      <div className="top-left">
-        <h3>{abbreviateZone(user.zone)}</h3>
-      </div>
-      <div className="top-center">
-        <h3>{user.name}</h3>
-      </div>
+      {user && (
+        <>
+          <div className="top-left">
+            <h3>{abbreviateZone(user.zone)}</h3>
+          </div>
+          <div className="top-center">
+            <h3>{user.name}</h3>
+          </div>
 
-      <div className="calendar-container">
-        <FullCalendar
-          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-          initialView="dayGridMonth"
-          headerToolbar={{
-            start: "today,prev,next",
-            center: "title",
-            end: "dayGridMonth,timeGridWeek,timeGridDay",
-          }}
-          height={"70vh"}
-          weekNumbers={true}
-          firstDay={4} // Thursday as the start of the week
-          events={events} // Pass the events to FullCalendar
-          eventContent={(eventInfo) => {
-            return (
-              <div
-                style={{
-                  fontWeight: "bold",
-                  color: "white",
-                  backgroundColor: eventInfo.event.backgroundColor,
-                  padding: "2px",
-                  borderRadius: "5px",
-                  textAlign: "center",
-                }}>
-                {eventInfo.event.title}
-              </div>
-            );
-          }}
-        />
-      </div>
+          <div className="calendar-container">
+            <FullCalendar
+              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+              initialView="dayGridMonth"
+              headerToolbar={{
+                start: "today,prev,next",
+                center: "title",
+                end: "dayGridMonth,timeGridWeek,timeGridDay",
+              }}
+              height={"70vh"}
+              weekNumbers={true}
+              firstDay={4}
+              events={events}
+              eventContent={(eventInfo) => (
+                <div
+                  style={{
+                    fontWeight: "bold",
+                    color: "white",
+                    backgroundColor: eventInfo.event.backgroundColor,
+                    padding: "2px",
+                    borderRadius: "5px",
+                    textAlign: "center",
+                  }}>
+                  {eventInfo.event.title}
+                </div>
+              )}
+            />
+          </div>
 
-      <button onClick={handleLogout}>Logout</button>
+          <button onClick={handleLogout}>Logout</button>
+        </>
+      )}
     </div>
   );
 };
