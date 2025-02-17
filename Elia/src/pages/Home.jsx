@@ -89,7 +89,7 @@ const Home = () => {
         // Handle the replacement user if available (fall back to assignedUserId if replacementUserId is missing)
         const actualUserId = day.replacementUserId || assignedUserId;
         const actualUserName = usersMap[actualUserId] || "Unknown";
-        console.log(actualUserName);
+        //console.log(actualUserName);
         // Default background color is blue (for normal shifts)
         let backgroundColor = "blue";
 
@@ -103,11 +103,16 @@ const Home = () => {
         // If the status is not "guard", it's a shift change (like sick, on leave, etc.)
         else if (day.status !== "guard") {
           backgroundColor = "red"; // Shift change
+
+          // Adjust the start and end times for the shift based on the date and the 7:30 AM start time
+          const shiftStartDate = new Date(day.date);
+          const shiftEndDate = new Date(shiftStartDate);
+          shiftEndDate.setHours(shiftStartDate.getHours() + 24); // Set to 24 hours after the start time
         }
         return {
           title:
             actualUserId === assignedUserId
-              ? `On Duty: ${assignedUserName}` // Title if no replacement
+              ? ` ${assignedUserName}` // Title if no replacement
               : `Replacement: ${actualUserName}`, // Title if replacement
           start: new Date(day.date).toISOString().split("T")[0], // Format the date to display on the calendar
           allDay: true,
@@ -151,6 +156,8 @@ const Home = () => {
               weekNumbers={true}
               firstDay={4}
               events={events}
+              displayEventTime={true}
+              displayEventEnd={true}
               eventContent={(eventInfo) => (
                 <div
                   style={{

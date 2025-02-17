@@ -1,0 +1,80 @@
+.requests-container {
+  background-color: rgba(255, 255, 255, 0.9);
+}
+.requests-left {
+  padding: 10px 20px;
+  background-color: #f0811a;
+  position: fixed;
+  top: 70px;
+  left: 20px;
+  border-radius: 5px;
+  opacity: 0.9;
+  font-size: 2em;
+}
+
+.requests-center {
+  font-size: 2em;
+  padding: 10px 20px;
+  background-color: #f0811a;
+  position: fixed;
+  top: 70px;
+  left: 48%;
+  border-radius: 5px;
+  opacity: 0.9;
+}
+.request-options {
+  margin-bottom: 30px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+select {
+  width: 30%; /* Make the select take 100% width of its container */
+  padding: 8px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #f0811a;
+  color: white;
+}
+.fc .fc-toolbar-chunk {
+  width: 170px;
+}
+.fc .fc-toolbar-chunk button {
+  display: inline-block;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 32px;
+  padding: 5px;
+  border-radius: 5px;
+  background-color: #f0811a;
+  color: white;
+  border: none;
+  cursor: pointer;
+  position: relative;
+}
+.fc .fc-toolbar-chunk button .fc-icon {
+  font-size: 26px;
+  position: absolute;
+  top: -10px;
+}
+.fc .fc-toolbar-chunk button:hover {
+  background-color: #7a420d;
+}
+.fc .fc-toolbar-title {
+  width: 250px;
+}
+@media (max-width: 768px) {
+  h4 {
+    display: none;
+  }
+  select {
+    margin: 0 auto;
+    width: 90%;
+    opacity: 0.8;
+  }
+  .fc-events-title {
+    display: none !important;
+  }
+}
