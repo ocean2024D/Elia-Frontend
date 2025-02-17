@@ -116,6 +116,7 @@ p {
 .fc-daygrid-event {
   border: none !important;
 }
+
 /* Media Query for Small Devices */
 @media (max-width: 768px) {
   h3 {
