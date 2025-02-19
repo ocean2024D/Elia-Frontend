@@ -15,22 +15,60 @@ const Requests = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [zoneUsers, setZoneUsers] = useState([]);
-  const [selectedUser, setSelectedUser] = useState(""); // Selected user for request
-  const [selectedDates, setSelectedDates] = useState([]); // Selected shift change dates
+  const [selectedUser, setSelectedUser] = useState("");
+  const [selectedDates, setSelectedDates] = useState([]);
   const [reasonOfExChange, setReasonOfExChange] = useState("");
+  const [duties, setDuties] = useState([]);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
       setUser(parsedUser);
-      fetchZoneUsers(parsedUser.zone);
+
+      if (parsedUser.id) {
+        fetchZoneUsers(parsedUser.zone);
+        fetchUserDuties(parsedUser.id);
+      } else {
+        console.error("User ID is missing!");
+      }
     } else {
       navigate("/login");
     }
   }, [navigate]);
 
-  // Fetch users in the same zone dynamically
+  useEffect(() => {
+    console.log("Fetched Duties for User:", duties);
+    duties.forEach((duty) => {
+      console.log(
+        `Duty for Week ${duty.weekNumber}, originally assigned to ${duty.assignedUser}`
+      );
+      duty.days.forEach((day) => {
+        console.log(
+          `- ${day.date} → Assigned User: ${day.assignedUser} (Status: ${day.status})`
+        );
+      });
+    });
+  }, [duties]);
+
+  const fetchUserDuties = async (userId) => {
+    if (!userId) {
+      console.error("fetchUserDuties called with undefined userId!");
+      return;
+    }
+
+    try {
+      const response = await axios.get(
+        `http://localhost:8080/api/duties/${userId}`,
+        { headers: { Authorization: `Bearer ${cookies.authToken}` } }
+      );
+
+      setDuties(response.data);
+    } catch (error) {
+      console.error("Error fetching user duties:", error);
+    }
+  };
+
   const fetchZoneUsers = async (zone) => {
     try {
       const response = await axios.get(
@@ -43,18 +81,30 @@ const Requests = () => {
     }
   };
 
-  // Handle date selection/deselection
-  const handleDateClick = (info) => {
-    const clickedDate = info.dateStr;
-    setSelectedDates(
-      (prevDates) =>
-        prevDates.includes(clickedDate)
-          ? prevDates.filter((date) => date !== clickedDate) // Remove if already selected
-          : [...prevDates, clickedDate] // Add if not selected
+  const isDayClickable = (date) => {
+    return duties.some((duty) =>
+      duty.days.some(
+        (day) =>
+          new Date(day.date).toDateString() === new Date(date).toDateString()
+      )
     );
   };
 
-  // Submit shift change request
+  const handleDateClick = (info) => {
+    const clickedDate = info.dateStr;
+
+    if (!isDayClickable(clickedDate)) {
+      toast.error("You can only select your assigned shifts.");
+      return;
+    }
+
+    setSelectedDates((prevDates) =>
+      prevDates.includes(clickedDate)
+        ? prevDates.filter((date) => date !== clickedDate)
+        : [...prevDates, clickedDate]
+    );
+  };
+
   const handleRequest = async () => {
     if (!user || selectedDates.length === 0) {
       toast.error("Please select at least one date.");
@@ -63,17 +113,17 @@ const Requests = () => {
 
     try {
       const requestData = {
-        requestingUser: user.id,
-        acceptingUser: selectedUser || null, // If no user is selected, it's an open request
+        requestingUser: user.id, // Include logged-in user ID
+        acceptingUser: selectedUser || null, // If null, it's an open request
         status: "pending",
         Days: selectedDates.map((date) => ({
           date,
-          requestStartTime: null, // You may want to collect this info
+          requestStartTime: null,
           requestEndTime: null,
           assignedUser: user.id,
-          reasonOfChange: reasonOfExChange, // Send correct value
+          reasonOfChange: reasonOfExChange,
         })),
-        reasonOfExChange: reasonOfExChange || "others", // Use selected reason
+        reasonOfExChange: reasonOfExChange || "others",
       };
 
       await axios.post("http://localhost:8080/api/dutyExchange", requestData, {
@@ -81,7 +131,7 @@ const Requests = () => {
       });
 
       toast.success("Shift change request submitted!");
-      setSelectedDates([]); // Clear selections after submission
+      setSelectedDates([]);
     } catch (error) {
       console.error("Error submitting request:", error);
       toast.error("Failed to submit request. Try again.");
@@ -99,15 +149,14 @@ const Requests = () => {
             <h3>{user.name}</h3>
           </div>
 
-          {/* Dropdown ABOVE Calendar */}
           <div className="request-options">
             <h4>Request Shift Change</h4>
             <select
               value={selectedUser}
               onChange={(e) => setSelectedUser(e.target.value)}>
               <option value="">Emergency Request (No specific user)</option>
-              {zoneUsers //users from the same zone
-                .filter((zUser) => zUser._id !== user.id) //except logged in user
+              {zoneUsers
+                .filter((zUser) => zUser._id !== user._id)
                 .map((zUser) => (
                   <option key={zUser._id} value={zUser._id}>
                     {zUser.name}
@@ -122,23 +171,38 @@ const Requests = () => {
               <option value="vacation">Vacation</option>
               <option value="others">Other</option>
             </select>
+
             <h4>Select Days for Shift Change</h4>
           </div>
 
-          {/* Calendar */}
           <div className="calendar-container">
             <FullCalendar
               plugins={[dayGridPlugin, interactionPlugin]}
               initialView="dayGridMonth"
               selectable={true}
               dateClick={handleDateClick}
-              events={selectedDates.map((date) => ({
-                title: window.innerWidth <= 768 ? "" : "Shift Change",
-                start: date,
-                allDay: true,
-                backgroundColor: "orange",
-                textColor: "white",
-              }))}
+              events={[
+                // ✅ Show shifts where logged-in user is assigned (even if week was assigned to someone else)
+                ...duties.flatMap((duty) =>
+                  duty.days
+                    .filter((day) => day.assignedUser === user.id) // Filter for logged-in user
+                    .map((day) => ({
+                      title: "Your Shift",
+                      start: new Date(day.date).toISOString().split("T")[0],
+                      allDay: true,
+                      backgroundColor: "green",
+                      textColor: "white",
+                    }))
+                ),
+                // ✅ Show selected shift change requests
+                ...selectedDates.map((date) => ({
+                  title: "Shift Change Request",
+                  start: date,
+                  allDay: true,
+                  backgroundColor: "orange",
+                  textColor: "white",
+                })),
+              ]}
               height={"60vh"}
               headerToolbar={{
                 start: "today,prev,next",
@@ -150,7 +214,6 @@ const Requests = () => {
             />
           </div>
 
-          {/* Submit Request Button */}
           <button onClick={handleRequest} disabled={selectedDates.length === 0}>
             Submit Request
           </button>

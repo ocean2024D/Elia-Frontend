@@ -8,6 +8,7 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import "./Home.css";
 import { abbreviateZone } from "../components/utils";
+import { toast } from "react-toastify";
 
 const Home = () => {
   const [cookies, , removeCookie] = useCookies(["authToken"]);
@@ -16,6 +17,39 @@ const Home = () => {
   const [events, setEvents] = useState([]);
   const [zoneUsers, setZoneUsers] = useState([]);
   const [duties, setDuties] = useState([]);
+  const [shiftRequests, setShiftRequests] = useState([]);
+
+  const fetchShiftRequests = async (zone, userId) => {
+    try {
+      const response = await axios.get(
+        `http://localhost:8080/api/dutyExchange/${encodeURIComponent(
+          zone
+        )}/${userId}`,
+        { headers: { Authorization: `Bearer ${cookies.authToken}` } }
+      );
+      setShiftRequests(response.data);
+      console.log("Fetched Shift Requests:", response.data);
+    } catch (error) {
+      console.error("Error fetching shift change requests:", error);
+    }
+  };
+  //debug for username in request change
+  useEffect(() => {
+    if (user?.zone) {
+      fetchShiftRequests(user.zone, user.id);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    console.log("Shift Requests:", shiftRequests);
+  }, [shiftRequests]);
+
+  // Fetch shift requests when user logs in
+  useEffect(() => {
+    if (user?.zone) {
+      fetchShiftRequests(user.zone, user.id);
+    }
+  }, [user]);
 
   // Fetch user info from localStorage
   useEffect(() => {
@@ -126,7 +160,6 @@ const Home = () => {
     // Set the events in the state to be displayed in the calendar
     setEvents(dutyEvents);
   };
-  console.log(user);
 
   const handleLogout = () => {
     removeCookie("authToken");
@@ -134,6 +167,69 @@ const Home = () => {
     navigate("/login");
   };
 
+  //Create an event that accepts requests or refuses it on click
+  const handleEventClick = async (clickInfo) => {
+    const selectedRequest = shiftRequests.find((request) =>
+      request.Days.some(
+        (day) =>
+          new Date(day.date).toISOString().split("T")[0] ===
+          clickInfo.event.startStr
+      )
+    );
+
+    if (!selectedRequest) return;
+
+    // Check if the user is allowed to accept the request
+    if (
+      selectedRequest.acceptingUser &&
+      selectedRequest.acceptingUser._id !== user.id
+    ) {
+      toast.error("You are not allowed to accept this request.");
+      return;
+    }
+
+    const action = window.confirm(
+      `Do you want to accept this shift change request from ${selectedRequest.requestingUser.name}?`
+    )
+      ? "accept"
+      : window.confirm("Do you want to reject this request?")
+      ? "reject"
+      : null;
+
+    if (!action) return;
+
+    try {
+      const response = await axios.put(
+        `http://localhost:8080/api/dutyExchange/accept/${selectedRequest._id}`,
+        { acceptingUser: user.id },
+        { headers: { Authorization: `Bearer ${cookies.authToken}` } }
+      );
+
+      toast.success(`Shift change request ${action}ed successfully!`);
+      fetchShiftRequests(user.zone, user.id); // Refresh shift requests
+    } catch (error) {
+      console.error("Error updating shift request:", error);
+      toast.error("Failed to update shift request.");
+    }
+  };
+  //Abbreviation needed when making a request to be accepted
+  const abbreviateName = (fullName) => {
+    if (!fullName) return "Unknown";
+    const parts = fullName.split(" ");
+    if (parts.length === 2)
+      return `${parts[0].slice(0, 3)} ${parts[1].slice(0, 3)}`; // Kev Sel for a first and last name
+    if (parts.length > 2)
+      return parts
+        .map((p) => p.charAt(0))
+        .join("")
+        .toUpperCase(); // JMD for more than 2 partition of name
+    return fullName; // If only one name, return as is
+  };
+  const reasonColors = {
+    sick: "black",
+    vacation: "blue",
+    others: "orange",
+  };
   return (
     <div className="home-container">
       {user && (
@@ -157,22 +253,42 @@ const Home = () => {
               height={"70vh"}
               weekNumbers={true}
               firstDay={4}
-              events={events}
-              displayEventTime={true}
-              displayEventEnd={true}
-              eventContent={(eventInfo) => (
-                <div
-                  style={{
-                    fontWeight: "bold",
-                    color: "white",
-                    backgroundColor: eventInfo.event.backgroundColor,
-                    padding: "2px",
-                    borderRadius: "5px",
-                    textAlign: "center",
-                  }}>
-                  {eventInfo.event.title}
-                </div>
-              )}
+              events={[
+                ...events, // ✅ Keeps existing duty shifts
+                ...shiftRequests
+                  .flatMap((request) =>
+                    request.Days.map((day) => {
+                      // Ensure date exists and is valid before processing
+                      if (!day.date || isNaN(new Date(day.date))) {
+                        console.warn("Invalid date found:", day);
+                        return null; // Skip invalid entries
+                      }
+
+                      return {
+                        title:
+                          request.status === "accepted"
+                            ? `Accepted: ${abbreviateName(
+                                request.requestingUser?.name
+                              )} → ${abbreviateName(
+                                request.acceptingUser?.name
+                              )}`
+                            : `Pending: ${abbreviateName(
+                                request.requestingUser?.name
+                              )}`,
+                        start: new Date(day.date).toISOString().split("T")[0], // Ensure valid date
+                        allDay: true,
+                        backgroundColor:
+                          request.status === "accepted"
+                            ? reasonColors[day.reasonOfChange] || "gray"
+                            : "red", // Red for pending, color-coded for accepted
+                        textColor: "white",
+                      };
+                    })
+                  )
+                  .filter(Boolean), // Remove null values from invalid dates
+              ]}
+              displayEventTime={false}
+              eventClick={handleEventClick}
             />
           </div>
 
