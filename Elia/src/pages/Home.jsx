@@ -76,6 +76,7 @@ const Home = () => {
   const formatEvents = () => {
     // Create a map for easy access to user names by their IDs
     const usersMap = zoneUsers.reduce((acc, user) => {
+      // build an object where key = user._id and value = user.name
       acc[user._id] = user.name; // Map each user id to their name
       return acc;
     }, {});
@@ -94,21 +95,21 @@ const Home = () => {
         let backgroundColor = "blue";
 
         // If the actual user is the logged-in user, highlight with green
-        if (user && actualUserId === user.id) {
+        if (user && actualUserId === user.id && day.status === "guard") {
           backgroundColor = "green";
-        } else if (day.status === "holiday") {
+        } else if (day.status === "vacation") {
           backgroundColor = "black";
-        }
-
-        // If the status is not "guard", it's a shift change (like sick, on leave, etc.)
-        else if (day.status !== "guard") {
-          backgroundColor = "red"; // Shift change
+        } else if (day.status === "others") {
+          backgroundColor = "orange";
+        } else if (day.status !== "guard") {
+          backgroundColor = "red";
 
           // Adjust the start and end times for the shift based on the date and the 7:30 AM start time
           const shiftStartDate = new Date(day.date);
           const shiftEndDate = new Date(shiftStartDate);
           shiftEndDate.setHours(shiftStartDate.getHours() + 24); // Set to 24 hours after the start time
         }
+
         return {
           title:
             actualUserId === assignedUserId
@@ -125,6 +126,7 @@ const Home = () => {
     // Set the events in the state to be displayed in the calendar
     setEvents(dutyEvents);
   };
+  console.log(user);
 
   const handleLogout = () => {
     removeCookie("authToken");
