@@ -18,6 +18,7 @@ const Requests = () => {
   const [selectedUser, setSelectedUser] = useState(""); // Selected user for request
   const [selectedDates, setSelectedDates] = useState([]); // Selected shift change dates
   const [reasonOfExChange, setReasonOfExChange] = useState("");
+
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
@@ -105,8 +106,8 @@ const Requests = () => {
               value={selectedUser}
               onChange={(e) => setSelectedUser(e.target.value)}>
               <option value="">Emergency Request (No specific user)</option>
-              {zoneUsers
-                .filter((zUser) => zUser._id !== user.id)
+              {zoneUsers //users from the same zone
+                .filter((zUser) => zUser._id !== user.id) //except logged in user
                 .map((zUser) => (
                   <option key={zUser._id} value={zUser._id}>
                     {zUser.name}
@@ -144,6 +145,8 @@ const Requests = () => {
                 center: "title",
                 end: "",
               }}
+              weekNumbers={true}
+              firstDay={4}
             />
           </div>
 
