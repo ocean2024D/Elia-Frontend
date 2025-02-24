@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useCookies } from "react-cookie";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { abbreviateZone } from "../components/utils";
+import { abbreviateZone } from "../../components/utils/utils";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
@@ -113,9 +113,8 @@ const Requests = () => {
 
     try {
       const requestData = {
-        requestingUser: user.id, // Include logged-in user ID
+        requestingUser: user.id,
         acceptingUser: selectedUser || null, // If null, it's an open request
-        status: "pending",
         Days: selectedDates.map((date) => ({
           date,
           requestStartTime: null,
@@ -126,12 +125,19 @@ const Requests = () => {
         reasonOfExChange: reasonOfExChange || "others",
       };
 
-      await axios.post("http://localhost:8080/api/dutyExchange", requestData, {
-        headers: { Authorization: `Bearer ${cookies.authToken}` },
-      });
+      // 🔹 Now sending multiple requests
+      const response = await axios.post(
+        "http://localhost:8080/api/dutyExchange",
+        requestData,
+        {
+          headers: { Authorization: `Bearer ${cookies.authToken}` },
+        }
+      );
 
-      toast.success("Shift change request submitted!");
-      setSelectedDates([]);
+      toast.success(
+        `${response.data.requests.length} shift change request(s) submitted!`
+      );
+      setSelectedDates([]); // Reset selection after submission
     } catch (error) {
       console.error("Error submitting request:", error);
       toast.error("Failed to submit request. Try again.");
@@ -151,18 +157,7 @@ const Requests = () => {
 
           <div className="request-options">
             <h4>Request Shift Change</h4>
-            <select
-              value={selectedUser}
-              onChange={(e) => setSelectedUser(e.target.value)}>
-              <option value="">Emergency Request (No specific user)</option>
-              {zoneUsers
-                .filter((zUser) => zUser._id !== user._id)
-                .map((zUser) => (
-                  <option key={zUser._id} value={zUser._id}>
-                    {zUser.name}
-                  </option>
-                ))}
-            </select>
+
             <select
               value={reasonOfExChange}
               onChange={(e) => setReasonOfExChange(e.target.value)}>

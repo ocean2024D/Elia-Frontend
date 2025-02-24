@@ -7,7 +7,7 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import "./Home.css";
-import { abbreviateZone } from "../components/utils";
+import { abbreviateZone } from "../../components/utils/utils";
 import { toast } from "react-toastify";
 
 const Home = () => {
@@ -19,30 +19,49 @@ const Home = () => {
   const [duties, setDuties] = useState([]);
   const [shiftRequests, setShiftRequests] = useState([]);
 
-  const fetchShiftRequests = async (zone, userId) => {
+  const fetchShiftRequests = async (userId, userZone) => {
     try {
       const response = await axios.get(
-        `http://localhost:8080/api/dutyExchange/${encodeURIComponent(
-          zone
-        )}/${userId}`,
+        `http://localhost:8080/api/dutyExchange`,
         { headers: { Authorization: `Bearer ${cookies.authToken}` } }
       );
-      setShiftRequests(response.data);
-      console.log("Fetched Shift Requests:", response.data);
+
+      let allRequests = response.data;
+
+      // 🔹 Fetch users in the same zone from localStorage
+      const zoneUsers = JSON.parse(localStorage.getItem("zoneUsers")) || [];
+
+      // 🔹 Filter requests: Keep only those where `requestingUser` is in the same zone
+      let filteredRequests = allRequests.filter((request) =>
+        zoneUsers.some((zUser) => zUser._id === request.requestingUser?._id)
+      );
+
+      // 🔹 Ensure each `Day` in a request has an `acceptingUser` displayed
+      filteredRequests = filteredRequests.map((request) => ({
+        ...request,
+        Days: request.Days.map((day) => ({
+          ...day,
+          acceptingUser:
+            zoneUsers.find((user) => user._id === day.acceptingUser)?.name ||
+            "Pending", // ✅ Convert ID to name
+        })),
+      }));
+
+      setShiftRequests(filteredRequests);
     } catch (error) {
       console.error("Error fetching shift change requests:", error);
     }
   };
-  //debug for username in request change
-  useEffect(() => {
-    if (user?.zone) {
-      fetchShiftRequests(user.zone, user.id);
-    }
-  }, [user]);
 
+  // Fetch shift requests when user logs in
   useEffect(() => {
-    console.log("Shift Requests:", shiftRequests);
-  }, [shiftRequests]);
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    if (storedUser?.id && storedUser?.zone) {
+      fetchShiftRequests(storedUser.id, storedUser.zone);
+    }
+  }, []);
+
+  useEffect(() => {}, [shiftRequests]);
 
   // Fetch shift requests when user logs in
   useEffect(() => {
@@ -90,10 +109,20 @@ const Home = () => {
         { headers: { Authorization: `Bearer ${cookies.authToken}` } }
       );
       setZoneUsers(response.data);
+
+      // Save to localStorage so we can use it for filtering
+      localStorage.setItem("zoneUsers", JSON.stringify(response.data));
     } catch (error) {
       console.error("Error fetching users:", error);
     }
   };
+
+  // Fetch users in the same zone when user is available
+  useEffect(() => {
+    if (user?.zone) {
+      fetchZoneUsers(user.zone);
+    }
+  }, [user]);
 
   const fetchDutiesByZone = async (zone) => {
     try {
@@ -169,22 +198,23 @@ const Home = () => {
 
   //Create an event that accepts requests or refuses it on click
   const handleEventClick = async (clickInfo) => {
+    const clickedDate = clickInfo.event.startStr;
+
+    // Find the corresponding request
     const selectedRequest = shiftRequests.find((request) =>
       request.Days.some(
-        (day) =>
-          new Date(day.date).toISOString().split("T")[0] ===
-          clickInfo.event.startStr
+        (day) => new Date(day.date).toISOString().split("T")[0] === clickedDate
       )
     );
 
-    if (!selectedRequest) return;
+    if (!selectedRequest) {
+      toast.error("No matching shift request found.");
+      return;
+    }
 
-    // Check if the user is allowed to accept the request
-    if (
-      selectedRequest.acceptingUser &&
-      selectedRequest.acceptingUser._id !== user.id
-    ) {
-      toast.error("You are not allowed to accept this request.");
+    // Ensure the user has permission to accept the request
+    if (selectedRequest.acceptingUser) {
+      toast.error("This shift change request has already been accepted.");
       return;
     }
 
@@ -201,7 +231,9 @@ const Home = () => {
     try {
       const response = await axios.put(
         `http://localhost:8080/api/dutyExchange/accept/${selectedRequest._id}`,
-        { acceptingUser: user.id },
+        {
+          acceptingUser: user.id, // ✅ Only sending acceptingUser
+        },
         { headers: { Authorization: `Bearer ${cookies.authToken}` } }
       );
 
@@ -212,6 +244,7 @@ const Home = () => {
       toast.error("Failed to update shift request.");
     }
   };
+
   //Abbreviation needed when making a request to be accepted
   const abbreviateName = (fullName) => {
     if (!fullName) return "Unknown";
@@ -226,8 +259,8 @@ const Home = () => {
     return fullName; // If only one name, return as is
   };
   const reasonColors = {
-    sick: "black",
-    vacation: "blue",
+    sick: "red",
+    vacation: "black",
     others: "orange",
   };
   return (
@@ -258,10 +291,9 @@ const Home = () => {
                 ...shiftRequests
                   .flatMap((request) =>
                     request.Days.map((day) => {
-                      // Ensure date exists and is valid before processing
                       if (!day.date || isNaN(new Date(day.date))) {
                         console.warn("Invalid date found:", day);
-                        return null; // Skip invalid entries
+                        return null;
                       }
 
                       return {
@@ -275,17 +307,17 @@ const Home = () => {
                             : `Pending: ${abbreviateName(
                                 request.requestingUser?.name
                               )}`,
-                        start: new Date(day.date).toISOString().split("T")[0], // Ensure valid date
+                        start: new Date(day.date).toISOString().split("T")[0],
                         allDay: true,
                         backgroundColor:
                           request.status === "accepted"
                             ? reasonColors[day.reasonOfChange] || "gray"
-                            : "red", // Red for pending, color-coded for accepted
+                            : "maroon", // Maroon for pending, color-coded for accepted
                         textColor: "white",
                       };
                     })
                   )
-                  .filter(Boolean), // Remove null values from invalid dates
+                  .filter(Boolean),
               ]}
               displayEventTime={false}
               eventClick={handleEventClick}

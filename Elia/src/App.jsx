@@ -1,16 +1,15 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Navbar from "./components/Navbar";
-import Home from "./pages/Home";
-import Requests from "./pages/Requests";
-import Admin from "./pages/Admin";
+import Navbar from "./components/Navbar/Navbar";
+import Home from "./pages/Home/Home";
+import Requests from "./pages/Requests/Requests";
+import Admin from "./pages/Admin/Admin";
 import Overview from "./pages/Overview";
-import Contacts from "./pages/Contacts";
-import About from "./pages/About";
-import Register from "./pages/Register";
-import ProtectedRoute from "./components/ProtectedRoute";
-import AdminProtectedRoute from "./components/AdminProtectedRoute";
-import Login from "./pages/Login";
-import "./App.css";
+
+import Register from "./pages/Register/Register";
+import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
+import AdminProtectedRoute from "./components/AdminProtectedRoute/AdminProtectedRoute";
+import Login from "./pages/Login/Login";
+
 const App = () => {
   return (
     <Router>
@@ -38,8 +37,7 @@ const App = () => {
           />
           <Route path="/requests" element={<Requests />} />
           <Route path="/overview" element={<Overview />} />
-          <Route path="/contacts" element={<Contacts />} />
-          <Route path="/about" element={<About />} />
+
           <Route path="/register" element={<Register />} />
         </Routes>
       </div>
