@@ -4,7 +4,6 @@ import Home from "./pages/Home/Home";
 import Requests from "./pages/Requests/Requests";
 import Admin from "./pages/Admin/Admin";
 import Overview from "./pages/Overview";
-
 import Register from "./pages/Register/Register";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import AdminProtectedRoute from "./components/AdminProtectedRoute/AdminProtectedRoute";
@@ -18,7 +17,7 @@ const App = () => {
         <Routes>
           <Route path="/login" element={<Login />} />
 
-          {/* Protect the home page */}
+          {/* Protect the home page and Admin page*/}
           <Route
             path="/"
             element={
@@ -37,7 +36,6 @@ const App = () => {
           />
           <Route path="/requests" element={<Requests />} />
           <Route path="/overview" element={<Overview />} />
-
           <Route path="/register" element={<Register />} />
         </Routes>
       </div>

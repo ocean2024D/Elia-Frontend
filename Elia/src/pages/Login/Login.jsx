@@ -15,13 +15,10 @@ const Login = () => {
     e.preventDefault();
     try {
       const { data } = await axios.post(
-        "http://localhost:8080/api/auth/login", // Fix: add "auth"
+        "http://localhost:8080/api/auth/login",
         values,
         { withCredentials: true }
       );
-
-      // Debug: Log the full response data
-      console.log("Login response: ", data);
 
       if (data.errors) {
         // Handle error messages
