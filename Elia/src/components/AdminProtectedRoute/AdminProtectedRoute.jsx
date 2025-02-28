@@ -9,8 +9,8 @@ const AdminProtectedRoute = ({ children }) => {
     : null;
 
   if (!cookies.authToken || !user || user.isAdmin !== true) {
-    console.warn("Unauthorized access - Redirecting to Login"); // Debugging log
-    return <Navigate to="/login" />;
+    console.warn("Unauthorized access - Redirecting to homepage"); // Debugging log
+    return <Navigate to="/" />;
   }
   console.log("User Data: ", user);
   console.log("Auth Token: ", cookies.authToken);

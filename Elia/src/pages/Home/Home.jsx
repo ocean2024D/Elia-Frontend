@@ -6,9 +6,10 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import "./Home.css";
-import { abbreviateZone } from "../components/utils";
+import { abbreviateZone } from "../../components/utils/utils";
 import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import "./Home.css";
 
 const Home = () => {
   const [cookies, , removeCookie] = useCookies(["authToken"]);
@@ -19,30 +20,50 @@ const Home = () => {
   const [duties, setDuties] = useState([]);
   const [shiftRequests, setShiftRequests] = useState([]);
 
-  const fetchShiftRequests = async (zone, userId) => {
+  const fetchShiftRequests = async (userId, userZone) => {
+    // with use of local storage
     try {
       const response = await axios.get(
-        `http://localhost:8080/api/dutyExchange/${encodeURIComponent(
-          zone
-        )}/${userId}`,
+        `http://localhost:8080/api/dutyExchange`,
         { headers: { Authorization: `Bearer ${cookies.authToken}` } }
       );
-      setShiftRequests(response.data);
-      console.log("Fetched Shift Requests:", response.data);
+
+      let allRequests = response.data;
+
+      //  Fetch users in the same zone from localStorage
+      const zoneUsers = JSON.parse(localStorage.getItem("zoneUsers")) || [];
+
+      //  Filter requests: Keep only those where `requestingUser` is in the same zone
+      let filteredRequests = allRequests.filter((request) =>
+        zoneUsers.some((zUser) => zUser._id === request.requestingUser?._id)
+      );
+
+      //  Ensure each `Day` in a request has an `acceptingUser` displayed
+      filteredRequests = filteredRequests.map((request) => ({
+        ...request,
+        Days: request.Days.map((day) => ({
+          ...day,
+          acceptingUser:
+            zoneUsers.find((user) => user._id === day.acceptingUser)?.name ||
+            "Pending", //  Converts ID to name
+        })),
+      }));
+
+      setShiftRequests(filteredRequests);
     } catch (error) {
       console.error("Error fetching shift change requests:", error);
     }
   };
-  //debug for username in request change
-  useEffect(() => {
-    if (user?.zone) {
-      fetchShiftRequests(user.zone, user.id);
-    }
-  }, [user]);
 
+  // Fetch shift requests when user logs in
   useEffect(() => {
-    console.log("Shift Requests:", shiftRequests);
-  }, [shiftRequests]);
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    if (storedUser?.id && storedUser?.zone) {
+      fetchShiftRequests(storedUser.id, storedUser.zone);
+    }
+  }, []);
+
+  useEffect(() => {}, [shiftRequests]);
 
   // Fetch shift requests when user logs in
   useEffect(() => {
@@ -90,10 +111,20 @@ const Home = () => {
         { headers: { Authorization: `Bearer ${cookies.authToken}` } }
       );
       setZoneUsers(response.data);
+
+      // Save to localStorage so we can use it for filtering
+      localStorage.setItem("zoneUsers", JSON.stringify(response.data));
     } catch (error) {
       console.error("Error fetching users:", error);
     }
   };
+
+  // Fetch users in the same zone when user is available
+  useEffect(() => {
+    if (user?.zone) {
+      fetchZoneUsers(user.zone);
+    }
+  }, [user]);
 
   const fetchDutiesByZone = async (zone) => {
     try {
@@ -137,7 +168,7 @@ const Home = () => {
           backgroundColor = "orange";
         } else if (day.status !== "guard") {
           backgroundColor = "red";
-
+          // This needs to be added with start and end hours
           // Adjust the start and end times for the shift based on the date and the 7:30 AM start time
           const shiftStartDate = new Date(day.date);
           const shiftEndDate = new Date(shiftStartDate);
@@ -167,36 +198,44 @@ const Home = () => {
     navigate("/login");
   };
 
-  //Create an event that accepts requests or refuses it on click
   const handleEventClick = async (clickInfo) => {
+    console.log("handleEventClick triggered:", clickInfo);
+    const clickedDate = clickInfo.event.startStr;
+    console.log("Clicked date:", clickedDate);
+
+    // Find the corresponding request
     const selectedRequest = shiftRequests.find((request) =>
       request.Days.some(
-        (day) =>
-          new Date(day.date).toISOString().split("T")[0] ===
-          clickInfo.event.startStr
+        (day) => new Date(day.date).toISOString().split("T")[0] === clickedDate
       )
     );
+    console.log("Selected request:", selectedRequest);
 
-    if (!selectedRequest) return;
-
-    // Check if the user is allowed to accept the request
-    if (
-      selectedRequest.acceptingUser &&
-      selectedRequest.acceptingUser._id !== user.id
-    ) {
-      toast.error("You are not allowed to accept this request.");
+    if (!selectedRequest) {
+      toast.error("No matching shift request found.");
       return;
     }
 
-    const action = window.confirm(
-      `Do you want to accept this shift change request from ${selectedRequest.requestingUser.name}?`
-    )
-      ? "accept"
-      : window.confirm("Do you want to reject this request?")
-      ? "reject"
-      : null;
+    // Prevent the requesting user from accepting their own request
+    if (selectedRequest.requestingUser._id === user.id) {
+      toast.error("You cannot accept your own shift change request.");
+      return;
+    }
 
-    if (!action) return;
+    // Ensure the user has permission to accept the request
+    if (selectedRequest.acceptingUser) {
+      toast.error("This shift change request has already been accepted.");
+      return;
+    }
+
+    const accept = window.confirm(
+      `Do you want to accept this shift change request from ${selectedRequest.requestingUser.name}?`
+    );
+
+    if (!accept) {
+      toast.info("Shift change request was not accepted.");
+      return;
+    }
 
     try {
       const response = await axios.put(
@@ -205,29 +244,31 @@ const Home = () => {
         { headers: { Authorization: `Bearer ${cookies.authToken}` } }
       );
 
-      toast.success(`Shift change request ${action}ed successfully!`);
+      toast.success(`Shift change request accepted successfully!`);
       fetchShiftRequests(user.zone, user.id); // Refresh shift requests
     } catch (error) {
       console.error("Error updating shift request:", error);
       toast.error("Failed to update shift request.");
     }
   };
-  //Abbreviation needed when making a request to be accepted
+
+  //Abbreviation needed when making a request to be accepted for space issue
   const abbreviateName = (fullName) => {
     if (!fullName) return "Unknown";
     const parts = fullName.split(" ");
     if (parts.length === 2)
-      return `${parts[0].slice(0, 3)} ${parts[1].slice(0, 3)}`; // Kev Sel for a first and last name
+      return `${parts[0].slice(0, 3)} ${parts[1].slice(0, 3)}`; // Abc Abc for a first and last name
     if (parts.length > 2)
       return parts
         .map((p) => p.charAt(0))
         .join("")
-        .toUpperCase(); // JMD for more than 2 partition of name
+        .toUpperCase(); // ABC... for more than 2 partition of name
     return fullName; // If only one name, return as is
   };
   const reasonColors = {
-    sick: "black",
-    vacation: "blue",
+    //color scheme for shift changes
+    sick: "red",
+    vacation: "black",
     others: "orange",
   };
   return (
@@ -254,17 +295,17 @@ const Home = () => {
               weekNumbers={true}
               firstDay={4}
               events={[
-                ...events, // ✅ Keeps existing duty shifts
+                ...events, // Keeps existing duty shifts
                 ...shiftRequests
                   .flatMap((request) =>
                     request.Days.map((day) => {
-                      // Ensure date exists and is valid before processing
                       if (!day.date || isNaN(new Date(day.date))) {
                         console.warn("Invalid date found:", day);
-                        return null; // Skip invalid entries
+                        return null;
                       }
 
                       return {
+                        //populating the shift by commenting who gets replaced by who + change bg with appropriate color
                         title:
                           request.status === "accepted"
                             ? `Accepted: ${abbreviateName(
@@ -275,17 +316,17 @@ const Home = () => {
                             : `Pending: ${abbreviateName(
                                 request.requestingUser?.name
                               )}`,
-                        start: new Date(day.date).toISOString().split("T")[0], // Ensure valid date
+                        start: new Date(day.date).toISOString().split("T")[0],
                         allDay: true,
                         backgroundColor:
                           request.status === "accepted"
                             ? reasonColors[day.reasonOfChange] || "gray"
-                            : "red", // Red for pending, color-coded for accepted
+                            : "maroon", // Maroon for pending, color-coded for accepted
                         textColor: "white",
                       };
                     })
                   )
-                  .filter(Boolean), // Remove null values from invalid dates
+                  .filter(Boolean),
               ]}
               displayEventTime={false}
               eventClick={handleEventClick}

@@ -34,16 +34,6 @@ const Navbar = () => {
                 Overview
               </Link>
             </li>
-            <li>
-              <Link to="/contacts" onClick={toggleMenu}>
-                Contacts
-              </Link>
-            </li>
-            <li>
-              <Link to="/about" onClick={toggleMenu}>
-                About
-              </Link>
-            </li>
           </ul>
         </div>
         <nav>
